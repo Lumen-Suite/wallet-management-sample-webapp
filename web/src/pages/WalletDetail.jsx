@@ -13,6 +13,8 @@ const FILE_SORT_OPTIONS = [
   { value: 'CreatedAt', label: 'Created' },
 ]
 
+const TABS = ['files', 'transactions']
+
 function InfoRow({ label, value, mono }) {
   return (
     <div className="grid grid-cols-3 gap-3 py-2 border-b border-lumen-border last:border-b-0">
@@ -22,10 +24,17 @@ function InfoRow({ label, value, mono }) {
   )
 }
 
+function shortAddr(addr) {
+  if (!addr) return '-'
+  return addr.length > 12 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr
+}
+
 export default function WalletDetail() {
   const { id } = useParams()
   const [params, setParams] = useSearchParams()
 
+  const tabParam = params.get('tab')
+  const tab = TABS.includes(tabParam) ? tabParam : 'files'
   const pageNumber = Number(params.get('pageNumber') || 1)
   const pageSize = Number(params.get('pageSize') || 10)
   const search = params.get('search') || ''
@@ -34,8 +43,9 @@ export default function WalletDetail() {
 
   const [wallet, setWallet] = useState(null)
   const [files, setFiles] = useState(null)
+  const [transactions, setTransactions] = useState(null)
   const [loadingWallet, setLoadingWallet] = useState(true)
-  const [loadingFiles, setLoadingFiles] = useState(false)
+  const [loadingList, setLoadingList] = useState(false)
   const [error, setError] = useState(null)
 
   const loadWallet = useCallback(async () => {
@@ -54,7 +64,7 @@ export default function WalletDetail() {
 
   const loadFiles = useCallback(async (address) => {
     if (!address) return
-    setLoadingFiles(true)
+    setLoadingList(true)
     try {
       const query = { pageNumber, pageSize }
       if (search) query.search = search
@@ -67,17 +77,34 @@ export default function WalletDetail() {
     } catch (e) {
       setError(extractError(e))
     } finally {
-      setLoadingFiles(false)
+      setLoadingList(false)
     }
   }, [pageNumber, pageSize, search, sortField, sortOrder])
+
+  const loadTransactions = useCallback(async (address) => {
+    if (!address) return
+    setLoadingList(true)
+    try {
+      const res = await api.get(`/wallets/Custodial/${encodeURIComponent(address)}/transactions`, {
+        params: { pageNumber, pageSize },
+      })
+      setTransactions(res.data)
+    } catch (e) {
+      setError(extractError(e))
+    } finally {
+      setLoadingList(false)
+    }
+  }, [pageNumber, pageSize])
 
   useEffect(() => {
     loadWallet()
   }, [loadWallet])
 
   useEffect(() => {
-    if (wallet?.WalletAddress) loadFiles(wallet.WalletAddress)
-  }, [wallet, loadFiles])
+    if (!wallet?.WalletAddress) return
+    if (tab === 'files') loadFiles(wallet.WalletAddress)
+    else loadTransactions(wallet.WalletAddress)
+  }, [wallet, tab, loadFiles, loadTransactions])
 
   const updateParams = (changes) => {
     const next = new URLSearchParams(params)
@@ -88,8 +115,22 @@ export default function WalletDetail() {
     setParams(next)
   }
 
+  const switchTab = (nextTab) => {
+    if (nextTab === tab) return
+    const next = new URLSearchParams(params)
+    next.set('tab', nextTab)
+    next.delete('pageNumber')
+    next.delete('search')
+    next.delete('sort[0][field]')
+    next.delete('sort[0][order]')
+    setParams(next)
+  }
+
   const filesList = files?.Files ?? files?.files ?? []
-  const pagination = files?.Pagination ?? files?.pagination
+  const txList = transactions?.Transactions ?? transactions?.transactions ?? []
+  const pagination = tab === 'files'
+    ? (files?.Pagination ?? files?.pagination)
+    : (transactions?.Pagination ?? transactions?.pagination)
 
   return (
     <div>
@@ -116,58 +157,134 @@ export default function WalletDetail() {
       )}
 
       <section>
-        <header className="mb-3">
-          <h2 className="text-lg font-semibold tracking-tight">Files in this wallet</h2>
-          <p className="text-sm text-lumen-muted mt-1">
-            Every file owned by this wallet address.
-          </p>
-        </header>
+        <div className="flex border-b border-lumen-border mb-4">
+          <button
+            type="button"
+            onClick={() => switchTab('files')}
+            className={`px-4 py-2 text-sm -mb-px border-b-2 ${
+              tab === 'files'
+                ? 'border-lumen-fg text-lumen-fg font-medium'
+                : 'border-transparent text-lumen-muted hover:text-lumen-fg'
+            }`}
+          >
+            Files
+          </button>
+          <button
+            type="button"
+            onClick={() => switchTab('transactions')}
+            className={`px-4 py-2 text-sm -mb-px border-b-2 ${
+              tab === 'transactions'
+                ? 'border-lumen-fg text-lumen-fg font-medium'
+                : 'border-transparent text-lumen-muted hover:text-lumen-fg'
+            }`}
+          >
+            Transactions
+          </button>
+        </div>
 
-        <SearchSortBar
-          search={search}
-          onSearchChange={(v) => updateParams({ search: v, pageNumber: 1 })}
-          sortField={sortField}
-          sortOrder={sortOrder}
-          onSortChange={({ field, order }) =>
-            updateParams({ 'sort[0][field]': field, 'sort[0][order]': field ? order : undefined, pageNumber: 1 })
-          }
-          sortOptions={FILE_SORT_OPTIONS}
-          placeholder="Search files..."
-        />
+        {tab === 'files' ? (
+          <>
+            <header className="mb-3">
+              <p className="text-sm text-lumen-muted">
+                Every file owned by this wallet address.
+              </p>
+            </header>
 
-        {loadingFiles ? (
-          <Spinner label="Loading files..." />
-        ) : filesList.length === 0 ? (
-          <EmptyState
-            title={search ? 'No files match your search' : 'No files yet'}
-            message="This wallet has no files associated with it."
-          />
-        ) : (
-          <div className="border border-lumen-border overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-lumen-subtle border-b border-lumen-border">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">Extension</th>
-                  <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden md:table-cell">Owner</th>
-                  <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden lg:table-cell">Checksum</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filesList.map((f) => {
-                  const fid = f.id ?? f.Id ?? f.Name
-                  return (
-                    <tr key={fid} className="border-b border-lumen-border last:border-b-0 hover:bg-lumen-row-hover">
-                      <td className="px-4 py-3 font-medium">{f.Name ?? '-'}</td>
-                      <td className="px-4 py-3 text-lumen-muted">{f.FileExtension ?? '-'}</td>
-                      <td className="px-4 py-3 hidden md:table-cell font-mono text-lumen-muted">{f.OwnerAddress ? `${f.OwnerAddress.slice(0, 6)}...${f.OwnerAddress.slice(-4)}` : '-'}</td>
-                      <td className="px-4 py-3 hidden lg:table-cell font-mono text-xs text-lumen-muted">{f.Checksum ? f.Checksum.slice(0, 12) + '...' : '-'}</td>
+            <SearchSortBar
+              search={search}
+              onSearchChange={(v) => updateParams({ search: v, pageNumber: 1 })}
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSortChange={({ field, order }) =>
+                updateParams({ 'sort[0][field]': field, 'sort[0][order]': field ? order : undefined, pageNumber: 1 })
+              }
+              sortOptions={FILE_SORT_OPTIONS}
+              placeholder="Search files..."
+            />
+
+            {loadingList ? (
+              <Spinner label="Loading files..." />
+            ) : filesList.length === 0 ? (
+              <EmptyState
+                title={search ? 'No files match your search' : 'No files yet'}
+                message="This wallet has no files associated with it."
+              />
+            ) : (
+              <div className="border border-lumen-border overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-lumen-subtle border-b border-lumen-border">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">Name</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">Extension</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden md:table-cell">Owner</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden lg:table-cell">Checksum</th>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {filesList.map((f) => {
+                      const fid = f.id ?? f.Id ?? f.Name
+                      return (
+                        <tr key={fid} className="border-b border-lumen-border last:border-b-0 hover:bg-lumen-row-hover">
+                          <td className="px-4 py-3 font-medium">{f.Name ?? '-'}</td>
+                          <td className="px-4 py-3 text-lumen-muted">{f.FileExtension ?? '-'}</td>
+                          <td className="px-4 py-3 hidden md:table-cell font-mono text-lumen-muted">{shortAddr(f.OwnerAddress)}</td>
+                          <td className="px-4 py-3 hidden lg:table-cell font-mono text-xs text-lumen-muted">{f.Checksum ? f.Checksum.slice(0, 12) + '...' : '-'}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <header className="mb-3">
+              <p className="text-sm text-lumen-muted">
+                On-chain transaction history for this wallet address (sent and received).
+              </p>
+            </header>
+
+            {loadingList ? (
+              <Spinner label="Loading transactions..." />
+            ) : txList.length === 0 ? (
+              <EmptyState
+                title="No transactions yet"
+                message="This wallet has not sent or received any transactions."
+              />
+            ) : (
+              <div className="border border-lumen-border overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-lumen-subtle border-b border-lumen-border">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">From</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">To</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden md:table-cell">Value</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden lg:table-cell">Hash</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {txList.map((t) => {
+                      const tid = t.id ?? t.Id ?? t.Log?.Hash
+                      const log = t.Log ?? {}
+                      const isOutgoing = wallet?.WalletAddress && log.From?.toLowerCase() === wallet.WalletAddress.toLowerCase()
+                      return (
+                        <tr key={tid} className="border-b border-lumen-border last:border-b-0 hover:bg-lumen-row-hover">
+                          <td className="px-4 py-3 font-mono text-lumen-muted">
+                            {shortAddr(log.From)}
+                            {isOutgoing && <span className="ml-2 text-xs uppercase tracking-wider text-lumen-muted">(self)</span>}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-lumen-muted">{shortAddr(log.To)}</td>
+                          <td className="px-4 py-3 hidden md:table-cell">{log.Value ?? '-'}</td>
+                          <td className="px-4 py-3 hidden lg:table-cell font-mono text-xs text-lumen-muted">{shortAddr(log.Hash)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
 
         <Pagination

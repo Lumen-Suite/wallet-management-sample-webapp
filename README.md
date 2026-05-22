@@ -97,7 +97,10 @@ The wallets dashboard appears immediately. That's it — you're done.
 
 ## What you'll see
 
-A list of every **custodial wallet** (a wallet the platform holds on behalf of a user) belonging to your organization. You can search, sort, and flip through pages. Click any wallet to see its details and the files (documents, certificates, etc.) attached to that wallet's address.
+A list of every **custodial wallet** (a wallet the platform holds on behalf of a user) belonging to your organization. You can search, sort, and flip through pages. Click any wallet to see its details, then switch between two tabs:
+
+- **Files** — documents, certificates, and other digital assets attached to that wallet's address.
+- **Transactions** — the wallet's on-chain transaction history (everything it has sent or received).
 
 > **If your dashboard says "No wallets":** That means your organization hasn't created any wallets yet. That's normal for a brand-new account. Create one in the Lumen dashboard and refresh this page.
 
@@ -125,7 +128,7 @@ More detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - [docs/SETUP.md](docs/SETUP.md) — the long, step-by-step installation guide for people who've never used a terminal before.
 - [docs/GET_CREDENTIALS.md](docs/GET_CREDENTIALS.md) — where to find your Lumen API key and secret, and how to keep them safe.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — a tour of what's in each folder and why.
-- [docs/API_REFERENCE.md](docs/API_REFERENCE.md) — the three routes the local server provides, for the technically curious.
+- [docs/API_REFERENCE.md](docs/API_REFERENCE.md) — the four routes the local server provides, for the technically curious.
 
 ---
 

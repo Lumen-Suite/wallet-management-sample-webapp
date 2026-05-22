@@ -4,11 +4,11 @@
   <img src="images/lumen-logo.svg" alt="Lumen" width="100" />
 </p>
 
-This page lists the three internet addresses (routes) the local Express server provides. The website part of the app uses them automatically when you click around — **you don't need to call them by hand** unless you're curious, debugging, or building something on top of this sample.
+This page lists the four internet addresses (routes) the local Express server provides. The website part of the app uses them automatically when you click around — **you don't need to call them by hand** unless you're curious, debugging, or building something on top of this sample.
 
 > **Note:** A **route** is a specific URL path the server responds to. For example, `GET /api/wallets/Custodial` is a route. **GET** means "ask for data" (as opposed to **POST**, which means "submit data").
 
-All three routes are GET-only. Each one quietly forwards the request to the real Lumen Wallet API with your `lumen-api-key` and `lumen-api-secret` headers attached by the server — never by the browser.
+All four routes are GET-only. Each one quietly forwards the request to the real Lumen Wallet API with your `lumen-api-key` and `lumen-api-secret` headers attached by the server — never by the browser.
 
 **Base URL when running locally:** `http://localhost:8787`
 
@@ -157,9 +157,65 @@ curl "http://localhost:8787/api/wallets/Custodial/0x1234abcd/files?pageNumber=1&
 
 ---
 
+## Route 4 — List transactions for a wallet
+
+### `GET /api/wallets/Custodial/:addr/transactions`
+
+Returns a paginated list of on-chain transactions for the given wallet **address**. Includes both sent and received transactions.
+
+> **Heads up:** Like Route 3, this uses the wallet's `WalletAddress` (the long `0x...` string), **not** the wallet's `id`.
+
+### Path parameter
+
+| Name | What it is |
+|---|---|
+| `:addr` | The wallet's `WalletAddress` — a long hexadecimal string starting with `0x`. |
+
+### Query parameters
+
+| Name | Type | Default | What it does |
+|---|---|---|---|
+| `pageNumber` | integer (1 to 10000) | 1 | Which page of results to return. |
+| `pageSize` | integer (1 to 100) | 10 | How many rows per page. |
+
+> **Note:** Unlike the file and wallet lists, this route does not support `search` or `sort` parameters.
+
+### Example
+
+```
+curl "http://localhost:8787/api/wallets/Custodial/0x1234abcd/transactions?pageNumber=1&pageSize=5"
+```
+
+> **What you should see:** A JSON object with a `Transactions` array and pagination info.
+
+### Response shape
+
+```json
+{
+  "Transactions": [
+    {
+      "id": "tx-abc123",
+      "Log": {
+        "From": "0x1234...abcd",
+        "To": "0x5678...efgh",
+        "Value": "0.05",
+        "Hash": "0xfeed...beef"
+      }
+    }
+  ],
+  "Pagination": { "TotalRowCount": 18, "TotalPage": 4, "CurrentPage": 1 }
+}
+```
+
+### What it wraps
+
+`GET {LUMEN_API_BASE_URL}/wallets/Custodial/{WalletAddress}/transactions`
+
+---
+
 ## Error responses
 
-When something goes wrong, all three routes come back with the same shape — and the HTTP status code (a 3-digit number that tells you what kind of problem it is) from the upstream Lumen call:
+When something goes wrong, all four routes come back with the same shape — and the HTTP status code (a 3-digit number that tells you what kind of problem it is) from the upstream Lumen call:
 
 ```json
 {

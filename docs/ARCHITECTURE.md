@@ -15,7 +15,7 @@ This page explains how the sample app is put together and why each piece exists.
 |  Browser (5173)    |  -->  |  Express BFF (8787)  |  -->  |  Lumen Wallet API     |
 |  Vite + React JSX  |       |  thin proxy          |       |  (Azure Container App)|
 |  Tailwind 4        |       |  + helmet + CORS     |       |                       |
-|                    |       |  + rate limit        |       |  3 wallet endpoints   |
+|                    |       |  + rate limit        |       |  4 wallet endpoints   |
 |  no auth, no token |       |  + Zod query check   |       |  (Custodial)          |
 |                    |       |  injects:            |       |                       |
 |                    |       |   lumen-api-key      |       |                       |
@@ -65,7 +65,7 @@ The browser never sees the secret. Even if someone inspects every byte of the Ja
 │       │   ├── errorHandler.js   converts upstream Lumen errors into { ok:false, status, error }
 │       │   └── validateQuery.js  Zod query schema for pagination/search/sort
 │       └── routes/
-│           └── wallets.routes.js the 3 proxied wallet routes
+│           └── wallets.routes.js the 4 proxied wallet routes
 └── web/                   Vite + React
     ├── vite.config.js     envDir set to '..' so it reads root .env
     ├── tailwind.config.js
@@ -84,7 +84,7 @@ In plain English: there are two main folders. `server/` holds the middleman serv
 
 ---
 
-## The 3 routes
+## The 4 routes
 
 The Express server exposes exactly the same paths Lumen does, just with `/api` stuck on the front. This makes the proxy easy to follow: if you see `/api/wallets/Custodial` in the React code, it maps to Lumen's `/wallets/Custodial`.
 
