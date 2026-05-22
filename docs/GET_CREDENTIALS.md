@@ -1,42 +1,123 @@
 # Getting your Lumen Dev credentials
 
-To run this sample you need two things from your Lumen Dev account:
-- An **API key**
-- An **API secret**
+<p align="center">
+  <img src="images/lumen-logo.svg" alt="Lumen" width="100" />
+</p>
 
-These are how the local Express server proves to Lumen that requests are coming from your organization.
+To run this sample app on your own computer, you need two values from your Lumen Dev account:
 
-## Step-by-step
+- An **API key** — a public-ish ID that says "this request is from my organization".
+- An **API secret** — a private password that proves it really is you.
 
-1. **Sign up / log in** to the Lumen Dev portal. If you don't have access yet, contact the Lumen team — Dev access is invite-based during the developer preview.
+Think of them like a username and password, except they're used by the small Express server running on your computer (not by a human typing them at a login screen) to talk to Lumen's online services on your behalf.
 
-2. **Open the API Keys section** of your organization's dashboard. (Usually under Settings > API Keys.)
+> **Note:** An **API** (Application Programming Interface) is the menu of services a system offers to other software. When this sample app asks Lumen "what wallets do I have?", it's calling Lumen's API.
 
-3. **Create a new API key** for this sample. Give it a name you'll recognize — e.g., `wallet-sample-localhost`.
+---
 
-4. **Copy the key and secret immediately.** The secret is typically shown **once**. If you close the dialog without copying, you'll have to delete the key and create a new one.
+## Step 1 — Sign in to the Lumen Dev portal
 
-5. **Paste them into your local `.env` file** as described in [SETUP.md step 5](SETUP.md#step-5--create-your-env-file).
+### What to do
+
+Open your browser and go to the Lumen Dev portal. Sign in with your organization account.
+
+> **Heads up:** If you don't have an account yet, contact the Lumen team. Dev access is invite-based during the developer preview, so it's not a self-serve sign-up.
+
+### What to expect
+
+You'll land on your organization's dashboard — the main page showing your wallets, files, and other modules.
+
+---
+
+## Step 2 — Open the API Keys section
+
+### What to do
+
+In the dashboard menu, navigate to **Settings** then **API Keys** (the exact path may vary slightly as the product evolves).
+
+### What to expect
+
+A page showing any existing API keys for your organization, with a button to create a new one.
+
+---
+
+## Step 3 — Create a new API key
+
+### What to do
+
+1. Click the **Create** (or **New API Key**) button.
+2. Give the key a name you'll recognize — for example, `wallet-sample-localhost`. The name is just a label for you; Lumen doesn't care what it says.
+3. Confirm the creation.
+
+### What to expect
+
+A dialog appears showing **two values**: the API key and the API secret.
+
+> **WARNING:** The secret is usually shown **only once**, right after creation. If you close the dialog without copying it, you'll have to delete the key and create a new one. There's no "show secret again" button on purpose — that's a deliberate security choice.
+
+---
+
+## Step 4 — Copy both values immediately
+
+### What to do
+
+Copy the **API key** and the **API secret** into a safe place — a password manager is ideal. A temporary text file is acceptable as long as you delete it after Step 5.
+
+> **TIP:** Do not paste either value into chat applications, screenshots, emails, or anywhere on the public internet. Treat them like passwords.
+
+---
+
+## Step 5 — Paste them into your local `.env` file
+
+### What to do
+
+Follow [SETUP.md Step 5](SETUP.md#step-5--create-your-env-file). Open the `.env` file in a text editor and replace the placeholders:
+
+```
+LUMEN_API_KEY=paste-your-api-key-here
+LUMEN_API_SECRET=paste-your-api-secret-here
+```
+
+becomes (with your real values):
+
+```
+LUMEN_API_KEY=abc123-your-real-key
+LUMEN_API_SECRET=xyz789-your-real-secret
+```
+
+> **Heads up:** No quotes, no spaces around the `=` sign. Save the file when done.
+
+---
 
 ## What can each credential do?
 
-| Credential | What it does | Where it goes |
+| Credential | What it does | Where it lives |
 |---|---|---|
-| `LUMEN_API_KEY` | Identifies your organization | Server `.env` only |
-| `LUMEN_API_SECRET` | Proves the request really comes from you | Server `.env` only |
+| `LUMEN_API_KEY` | Identifies your organization to Lumen. Public-ish — think of it like an email address. | Server `.env` file only. |
+| `LUMEN_API_SECRET` | Proves the request really comes from your organization. The password half. | Server `.env` file only. |
 
-Both stay on your local Express server. The browser never sees them.
+Both values stay on your local Express server (the small program running on your computer at port 8787). The browser side of the app **never** receives them — it only ever talks to the local server, which adds these credentials to outgoing requests before they leave your machine.
+
+---
 
 ## If something goes wrong
 
-| Symptom | Cause | Fix |
+| What you saw | What it means | How to fix it |
 |---|---|---|
-| 401 Unauthorized | Key/secret typo, or the key was revoked | Re-copy from the dashboard, re-paste into `.env` |
-| 403 Forbidden | Your key doesn't have wallet read permission | Contact the Lumen team to enable the WALLETS module on your org |
-| "errorMsg: API key not found" | You pasted the wrong field | Make sure the value you put in `LUMEN_API_KEY` is the public part, not the secret |
+| Red banner: `401 Unauthorized` | The key or secret is wrong, has a typo, or was deleted from the Lumen dashboard. | Re-copy both values from the dashboard, paste them into `.env` (no quotes, no extra spaces), save, and restart the app with `npm start`. |
+| Red banner: `403 Forbidden` | Your API key is valid, but it doesn't have permission to read wallets. | Contact the Lumen team and ask them to enable the **WALLETS** module on your organization. |
+| Error message: `errorMsg: API key not found` | You probably swapped the values — pasted the secret into the key slot or vice versa. | Make sure `LUMEN_API_KEY` holds the public ID and `LUMEN_API_SECRET` holds the secret. |
 
-## Keep it private
+---
 
-- **Never commit `.env`** to Git. The included `.gitignore` already prevents this.
-- **Never paste your secret in chat / Slack / screenshots.** If you do, immediately delete that API key from the dashboard and create a new one.
-- For production deployments, store the values in your hosting provider's secrets manager — never in source control.
+## Keep your credentials safe
+
+> **WARNING:** A leaked API secret is like a leaked password. Anyone who has it can pretend to be your organization until you revoke the key.
+
+A few simple rules:
+
+- **Never commit `.env` to Git.** The included `.gitignore` already prevents this — leave it alone.
+- **Never paste your secret anywhere public.** Not in chat, not in Slack, not in a screenshot, not in a support ticket. If you accidentally do, immediately delete that API key from the Lumen dashboard and create a new one.
+- **For production deployments**, store the values in your hosting provider's secrets manager (Azure Key Vault, AWS Secrets Manager, Render's environment variables, etc.) — never in source control.
+
+> **Tip:** If you ever suspect a secret has leaked, the fastest fix is to delete that API key in the dashboard. Any request using the old secret will instantly fail. Then create a new key and update `.env`.
