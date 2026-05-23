@@ -18,16 +18,6 @@ export default function Header() {
             Sample
           </span>
         </Link>
-        <nav className="text-sm">
-          <a
-            href="https://github.com/Bayanichain/wallet-management-sample-webapp"
-            target="_blank"
-            rel="noreferrer"
-            className="text-lumen-muted hover:text-lumen-fg"
-          >
-            GitHub
-          </a>
-        </nav>
       </div>
     </header>
   )

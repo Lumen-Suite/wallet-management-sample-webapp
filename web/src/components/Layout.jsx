@@ -11,8 +11,18 @@ export default function Layout() {
         </div>
       </main>
       <footer className="border-t border-lumen-border">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 text-xs text-lumen-muted">
-          Public sample &middot; calls the Lumen Dev Wallet API through a local Express proxy &middot; MIT licensed
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 text-xs text-lumen-muted flex items-center justify-between gap-4">
+          <span>
+            Public sample &middot; calls the Lumen Dev Wallet API through a local Express proxy &middot; MIT licensed
+          </span>
+          <a
+            href="https://github.com/Bayanichain/wallet-management-sample-webapp"
+            target="_blank"
+            rel="noreferrer"
+            className="text-lumen-muted hover:text-lumen-fg"
+          >
+            GitHub
+          </a>
         </div>
       </footer>
     </div>
