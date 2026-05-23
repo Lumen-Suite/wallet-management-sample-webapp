@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api, extractError } from '../api/client.js'
 import Spinner from '../components/Spinner.jsx'
 import ErrorBanner from '../components/ErrorBanner.jsx'
@@ -21,6 +21,7 @@ function shortenAddress(addr) {
 }
 
 export default function Wallets() {
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
 
   const pageNumber = Number(params.get('pageNumber') || 1)
@@ -116,13 +117,23 @@ export default function Wallets() {
             <tbody>
               {wallets.map((w) => {
                 const id = w.id ?? w.Id ?? w.WalletAddress
+                const go = () => navigate(`/wallets/${encodeURIComponent(id)}`)
                 return (
-                  <tr key={id} className="border-b border-lumen-border last:border-b-0 hover:bg-lumen-row-hover">
-                    <td className="px-4 py-3 font-mono">
-                      <Link to={`/wallets/${encodeURIComponent(id)}`} className="text-lumen-fg underline-offset-2 hover:underline">
-                        {shortenAddress(w.WalletAddress)}
-                      </Link>
-                    </td>
+                  <tr
+                    key={id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={go}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        go()
+                      }
+                    }}
+                    className="border-b border-lumen-border last:border-b-0 hover:bg-lumen-row-hover cursor-pointer"
+                    title="View wallet details"
+                  >
+                    <td className="px-4 py-3 font-mono text-lumen-fg">{shortenAddress(w.WalletAddress)}</td>
                     <td className="px-4 py-3">{w.Provider?.AccountName ?? '-'}</td>
                     <td className="px-4 py-3 hidden sm:table-cell text-lumen-muted">{w.Provider?.Email ?? '-'}</td>
                     <td className="px-4 py-3 hidden md:table-cell text-lumen-muted">{w.AccountType ?? 'Custodial'}</td>

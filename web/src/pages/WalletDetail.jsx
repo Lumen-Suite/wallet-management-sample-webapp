@@ -53,7 +53,7 @@ export default function WalletDetail() {
     setError(null)
     try {
       const res = await api.get(`/wallets/Custodial/${encodeURIComponent(id)}`)
-      setWallet(res.data)
+      setWallet(res.data?.Wallet ?? res.data)
     } catch (e) {
       setError(extractError(e))
       setWallet(null)
