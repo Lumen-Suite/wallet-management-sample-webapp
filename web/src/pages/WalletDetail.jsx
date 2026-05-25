@@ -6,6 +6,7 @@ import ErrorBanner from '../components/ErrorBanner.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import Pagination from '../components/Pagination.jsx'
 import SearchSortBar from '../components/SearchSortBar.jsx'
+import TransactionDetailModal from '../components/TransactionDetailModal.jsx'
 
 const FILE_SORT_OPTIONS = [
   { value: 'Name', label: 'File name' },
@@ -47,6 +48,7 @@ export default function WalletDetail() {
   const [loadingWallet, setLoadingWallet] = useState(true)
   const [loadingList, setLoadingList] = useState(false)
   const [error, setError] = useState(null)
+  const [activeTx, setActiveTx] = useState(null)
 
   const loadWallet = useCallback(async () => {
     setLoadingWallet(true)
@@ -257,26 +259,51 @@ export default function WalletDetail() {
                 <table className="w-full text-sm">
                   <thead className="bg-lumen-subtle border-b border-lumen-border">
                     <tr>
-                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">From</th>
-                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">To</th>
-                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden md:table-cell">Value</th>
-                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden lg:table-cell">Hash</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">Type</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider">Token</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden md:table-cell">Counterparty</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden lg:table-cell">Tx hash</th>
+                      <th className="text-left px-4 py-3 font-medium text-lumen-muted uppercase text-xs tracking-wider hidden sm:table-cell">When</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {txList.map((t) => {
-                      const tid = t.id ?? t.Id ?? t.Log?.Hash
+                    {txList.map((t, idx) => {
                       const log = t.Log ?? {}
-                      const isOutgoing = wallet?.WalletAddress && log.From?.toLowerCase() === wallet.WalletAddress.toLowerCase()
+                      const tid = log.TransactionHash ?? `${t.id ?? idx}-${t.ContractAddress}-${t.TokenID}`
+                      const me = wallet?.WalletAddress?.toLowerCase()
+                      const fromMe = me && log.From?.toLowerCase() === me
+                      const counterparty = fromMe ? log.To : log.From
+                      const typeStr = String(log.Type ?? '').toLowerCase()
+                      const typeColor = typeStr === 'minted'
+                        ? 'border-lumen-success text-lumen-success'
+                        : typeStr === 'burned'
+                          ? 'border-lumen-error text-lumen-error'
+                          : 'border-lumen-border text-lumen-fg'
+                      const when = log.LogTS ? new Date((log.LogTS < 1e12 ? log.LogTS * 1000 : log.LogTS)).toLocaleString() : ''
                       return (
-                        <tr key={tid} className="border-b border-lumen-border last:border-b-0 hover:bg-lumen-row-hover">
-                          <td className="px-4 py-3 font-mono text-lumen-muted">
-                            {shortAddr(log.From)}
-                            {isOutgoing && <span className="ml-2 text-xs uppercase tracking-wider text-lumen-muted">(self)</span>}
+                        <tr
+                          key={tid}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setActiveTx(t)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              setActiveTx(t)
+                            }
+                          }}
+                          className="border-b border-lumen-border last:border-b-0 hover:bg-lumen-row-hover cursor-pointer"
+                          title="View transaction details"
+                        >
+                          <td className="px-4 py-3">
+                            <span className={`text-xs uppercase tracking-wider px-2 py-0.5 border ${typeColor}`}>
+                              {log.Type ?? '-'}
+                            </span>
                           </td>
-                          <td className="px-4 py-3 font-mono text-lumen-muted">{shortAddr(log.To)}</td>
-                          <td className="px-4 py-3 hidden md:table-cell">{log.Value ?? '-'}</td>
-                          <td className="px-4 py-3 hidden lg:table-cell font-mono text-xs text-lumen-muted">{shortAddr(log.Hash)}</td>
+                          <td className="px-4 py-3 font-mono">{t.TokenID != null ? `#${t.TokenID}` : '-'}</td>
+                          <td className="px-4 py-3 hidden md:table-cell font-mono text-lumen-muted">{shortAddr(counterparty)}</td>
+                          <td className="px-4 py-3 hidden lg:table-cell font-mono text-xs text-lumen-muted">{shortAddr(log.TransactionHash)}</td>
+                          <td className="px-4 py-3 hidden sm:table-cell text-lumen-muted text-xs">{when}</td>
                         </tr>
                       )
                     })}
@@ -294,6 +321,12 @@ export default function WalletDetail() {
           onPageSizeChange={(s) => updateParams({ pageSize: s, pageNumber: 1 })}
         />
       </section>
+
+      <TransactionDetailModal
+        tx={activeTx}
+        viewerAddress={wallet?.WalletAddress}
+        onClose={() => setActiveTx(null)}
+      />
     </div>
   )
 }
