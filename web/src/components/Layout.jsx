@@ -16,7 +16,7 @@ export default function Layout() {
             Public sample &middot; calls the Lumen Dev Wallet API through a local Express proxy &middot; MIT licensed
           </span>
           <a
-            href="https://github.com/Bayanichain/wallet-management-sample-webapp"
+            href="https://github.com/Lumen-Suite/wallet-management-sample-webapp"
             target="_blank"
             rel="noreferrer"
             className="text-lumen-muted hover:text-lumen-fg"
