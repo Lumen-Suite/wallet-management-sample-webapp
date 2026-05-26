@@ -228,7 +228,7 @@ export default function WalletDetail() {
                       return (
                         <tr key={fid} className="border-b border-lumen-border last:border-b-0 hover:bg-lumen-row-hover">
                           <td className="px-4 py-3 font-medium">{f.Name ?? '-'}</td>
-                          <td className="px-4 py-3 text-lumen-muted">{f.FileExtension ?? '-'}</td>
+                          <td className="px-4 py-3 text-lumen-muted">{f.File?.Extension ?? f.FileExtension ?? '-'}</td>
                           <td className="px-4 py-3 hidden md:table-cell font-mono text-lumen-muted">{shortAddr(f.OwnerAddress)}</td>
                           <td className="px-4 py-3 hidden lg:table-cell font-mono text-xs text-lumen-muted">{f.Checksum ? f.Checksum.slice(0, 12) + '...' : '-'}</td>
                         </tr>
