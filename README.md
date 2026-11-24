@@ -110,7 +110,7 @@ A list of every **custodial wallet** (a wallet the platform holds on behalf of a
 
 ```
 Your browser  ->  Local Express server  ->  Lumen Dev Wallet API
-   :5173             :8787                   (Azure cloud)
+   :5173             :8787                   (AWS cloud)
 ```
 
 The **Express server** is a tiny program running on your own computer. Its only job is to attach your API key and secret to outgoing requests before sending them to Lumen, so those secrets never end up in the browser where someone could steal them.
